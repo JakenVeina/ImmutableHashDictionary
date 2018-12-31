@@ -5,33 +5,47 @@ namespace System.Collections.Immutable.Extra
 {
     public partial class ImmutableHashDictionary<TKey, TValue>
     {
-		public class Builder : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IDictionary
+		public sealed class Builder
+            : IDictionary<TKey, TValue>,
+                IReadOnlyDictionary<TKey, TValue>,
+                IDictionary
         {
+            #region Constructors
+
+            internal Builder(IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
+            {
+                _keyComparer = keyComparer ?? EqualityComparer<TKey>.Default;
+                _valueComparer = valueComparer ?? EqualityComparer<TValue>.Default;
+            }
+
+            #endregion Constructors
+
             #region Builder
+            #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
 
             /// <summary>
             /// The <see cref="IEqualityComparer{T}"/> used to compare <typeparamref name="TKey"/> values within the dictionary.
             /// </summary>
             public IEqualityComparer<TKey> KeyComparer
-                => throw new NotImplementedException();
+                => _keyComparer;
 
             /// <summary>
             /// The set of <see cref="KeyValuePair{TKey, TValue}.Key"/> values of each <see cref="KeyValuePair{TKey, TValue}"/> in the dictionary.
             /// </summary>
             public IReadOnlyCollection<TKey> Keys
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.Keys;
 
             /// <summary>
             /// The <see cref="IEqualityComparer{T}"/> used to compare <typeparamref name="TValue"/> values within the dictionary.
             /// </summary>
             public IEqualityComparer<TValue> ValueComparer
-                => throw new NotImplementedException();
+                => _valueComparer;
 
             /// <summary>
             /// The set of <see cref="KeyValuePair{TKey, TValue}.Value"/> values of each <see cref="KeyValuePair{TKey, TValue}"/> in the dictionary.
             /// </summary>
             public IReadOnlyCollection<TValue> Values
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.Values;
 
             /// <summary>
             /// Determines whether the <see cref="ImmutableDictionary{TKey, TValue}"/>
@@ -46,7 +60,13 @@ namespace System.Collections.Immutable.Extra
             /// </returns>
             [Pure]
             public bool ContainsValue(TValue value)
-                => throw new NotImplementedException();
+            {
+                foreach (var item in CurrentDictionaryForRead)
+                    if (ValueComparer.Equals(value, item.Value))
+                        return true;
+
+                return false;
+            }
 
             /// <summary>
             /// Adds a set of key/value entries to the dictionary
@@ -54,14 +74,28 @@ namespace System.Collections.Immutable.Extra
             /// <param name="items">The entries to be added.</param>
             /// <exception cref="ArgumentException">Throws if <paramref name="items"/> contains a key that already exists within the dictionary, mapped to a different value.</exception>
             public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-                => throw new NotImplementedException();
+            {
+                if (items is null)
+                    throw new ArgumentNullException(nameof(items));
+
+                var currentDictionary = CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>;
+                foreach (var item in items)
+                    currentDictionary.Add(item);
+            }
 
             /// <summary>
             /// Removes any entries from the dictionary whose keys match those given.
             /// </summary>
             /// <param name="keys">The keys whose entries are to be removed from the dictionary.</param>
             public void RemoveRange(IEnumerable<TKey> keys)
-                => throw new NotImplementedException();
+            {
+                if (keys is null)
+                    throw new ArgumentNullException(nameof(keys));
+
+                var currentDictionary = CurrentDictionaryForWrite;
+                foreach (var key in keys)
+                    currentDictionary.Remove(key);
+            }
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
@@ -70,7 +104,9 @@ namespace System.Collections.Immutable.Extra
             /// <returns>The value for the key, or the default value of type <typeparamref name="TValue"/> if no matching key was found.</returns>
             [Pure]
             public TValue GetValueOrDefault(TKey key)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.TryGetValue(key, out var value)
+                    ? value
+                    : default;
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
@@ -82,7 +118,9 @@ namespace System.Collections.Immutable.Extra
             /// </returns>
             [Pure]
             public TValue GetValueOrDefault(TKey key, TValue defaultValue)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.TryGetValue(key, out var value)
+                    ? value
+                    : defaultValue;
 
             /// <summary>
             /// Converts the current contents of the builder to a new <see cref="ImmutableHashDictionary{TKey, TValue}"/>.
@@ -95,161 +133,223 @@ namespace System.Collections.Immutable.Extra
             /// previously-created <see cref="ImmutableHashDictionary{TKey, TValue}"/> from being mutated.
             /// </remarks>
             public ImmutableHashDictionary<TKey, TValue> ToImmutable()
-                => throw new NotImplementedException();
+            {
+                var immutableHashDictionary = new ImmutableHashDictionary<TKey, TValue>(CurrentDictionaryForRead, _keyComparer, _valueComparer);
 
+                _lastDictionary = _currentDictionary;
+                _currentDictionary = null;
+
+                return immutableHashDictionary;
+            }
+
+            #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             #endregion Builder
 
-            #region IDictionary
+            #region IDictionary<TKey, TValue>
+            #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
 
             /// <inheritdoc />
             public TValue this[TKey key]
             {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
+                get => CurrentDictionaryForRead[key];
+                set => CurrentDictionaryForWrite[key] = value;
             }
 
             /// <inheritdoc />
             ICollection<TKey> IDictionary<TKey, TValue>.Keys
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.Keys;
 
             /// <inheritdoc />
             ICollection<TValue> IDictionary<TKey, TValue>.Values
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.Values;
 
             /// <inheritdoc />
             public void Add(TKey key, TValue value)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForWrite.Add(key, value);
 
             /// <inheritdoc />
             [Pure]
             public bool ContainsKey(TKey key)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.ContainsKey(key);
 
             /// <inheritdoc />
             public bool Remove(TKey key)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForWrite.Remove(key);
 
             /// <inheritdoc />
             [Pure]
             public bool TryGetValue(TKey key, out TValue value)
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.TryGetValue(key, out value);
+
+            #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
+            #endregion IDictionary<TKey, TValue>
+
+            #region IDictionary
 
             /// <inheritdoc />
             object IDictionary.this[object key]
             {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
+                get => (CurrentDictionaryForRead as IDictionary)[key];
+                set => (CurrentDictionaryForWrite as IDictionary)[key] = value;
             }
 
             /// <inheritdoc />
             bool IDictionary.IsFixedSize
-                => throw new NotImplementedException();
+                => false;
 
             /// <inheritdoc />
             bool IDictionary.IsReadOnly
-                => throw new NotImplementedException();
+                => false;
 
             /// <inheritdoc />
             ICollection IDictionary.Keys
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IDictionary).Keys;
 
             /// <inheritdoc />
             ICollection IDictionary.Values
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IDictionary).Values;
 
             /// <inheritdoc />
             void IDictionary.Add(object key, object value)
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForWrite as IDictionary).Add(key, value);
 
             /// <inheritdoc />
             void IDictionary.Clear()
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForWrite as IDictionary).Clear();
 
             /// <inheritdoc />
+            [Pure]
             bool IDictionary.Contains(object key)
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IDictionary).Contains(key);
 
             /// <inheritdoc />
+            [Pure]
             IDictionaryEnumerator IDictionary.GetEnumerator()
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IDictionary).GetEnumerator();
 
             /// <inheritdoc />
             void IDictionary.Remove(object key)
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForWrite as IDictionary).Remove(key);
 
             #endregion IDictionary
+
+            #region ICollection<KeyValuePair<TKey, TValue>>
+
+            /// <inheritdoc />
+            public int Count
+                => CurrentDictionaryForRead.Count;
+
+            /// <inheritdoc />
+            bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
+                => false;
+
+            /// <inheritdoc />
+            public void Add(KeyValuePair<TKey, TValue> item)
+                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Add(item);
+
+            /// <inheritdoc />
+            public void Clear()
+                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Clear();
+
+            /// <inheritdoc />
+            [Pure]
+            public bool Contains(KeyValuePair<TKey, TValue> item)
+                => (CurrentDictionaryForRead as ICollection<KeyValuePair<TKey, TValue>>).Contains(item);
+
+            /// <inheritdoc />
+            [Pure]
+            void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).CopyTo(array, arrayIndex);
+
+            /// <inheritdoc />
+            bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
+                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Remove(item);
+
+            #endregion ICollection<KeyValuePair<TKey, TValue>>
 
             #region ICollection
 
             /// <inheritdoc />
-            public int Count
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            public void Add(KeyValuePair<TKey, TValue> item)
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            public void Clear()
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            public bool Contains(KeyValuePair<TKey, TValue> item)
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
-            bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
-                => throw new NotImplementedException();
-
-            /// <inheritdoc />
             bool ICollection.IsSynchronized
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as ICollection).IsSynchronized;
 
             /// <inheritdoc />
             object ICollection.SyncRoot
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as ICollection).SyncRoot;
 
             /// <inheritdoc />
+            [Pure]
             void ICollection.CopyTo(Array array, int index)
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as ICollection).CopyTo(array, index);
 
             #endregion ICollection
 
-            #region IReadOnlyDictionary
+            #region IReadOnlyDictionary<TKey, TValue>
 
             /// <inheritdoc />
             [Pure]
             IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IReadOnlyDictionary<TKey, TValue>).Keys;
 
             /// <inheritdoc />
             [Pure]
             IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IReadOnlyDictionary<TKey, TValue>).Values;
 
-            #endregion IReadOnlyDictionary
+            #endregion IReadOnlyDictionary<TKey, TValue>
 
-            #region IEnumerable
+            #region IEnumerable<KeyValuePair<TKey, TValue>
 
             /// <inheritdoc />
             [Pure]
             public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-                => throw new NotImplementedException();
+                => CurrentDictionaryForRead.GetEnumerator();
+
+            #endregion IEnumerable<KeyValuePair<TKey, TValue>
+            
+            #region IEnumerable
 
             /// <inheritdoc />
             [Pure]
             IEnumerator IEnumerable.GetEnumerator()
-                => throw new NotImplementedException();
+                => (CurrentDictionaryForRead as IEnumerable).GetEnumerator();
 
             #endregion IEnumerable
+
+            #region Internals
+
+            internal Dictionary<TKey, TValue> CurrentDictionaryForRead
+                => _currentDictionary
+                    ?? _emptyDictionary;
+
+            internal Dictionary<TKey, TValue> CurrentDictionaryForWrite
+            {
+                get
+                {
+                    if (_currentDictionary is null)
+                        _currentDictionary = (_lastDictionary is null)
+                            ? new Dictionary<TKey, TValue>(_keyComparer)
+                            : new Dictionary<TKey, TValue>(_lastDictionary, _keyComparer);
+
+                    return _currentDictionary;
+                }
+            }
+
+            #endregion Internals
+
+            #region Private Fields
+
+            private readonly IEqualityComparer<TKey> _keyComparer;
+
+            private readonly IEqualityComparer<TValue> _valueComparer;
+
+            private Dictionary<TKey, TValue>? _currentDictionary
+                = null;
+                
+            private Dictionary<TKey, TValue>? _lastDictionary
+                = null;
+
+            #endregion Private Fields
         }
     }
 }
