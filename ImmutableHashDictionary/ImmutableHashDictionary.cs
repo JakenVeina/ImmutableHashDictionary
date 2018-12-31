@@ -68,14 +68,14 @@ namespace System.Collections.Immutable.Extra
         /// See <see cref="IImmutableDictionary{TKey, TValue}.Add(TKey, TValue)"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> Add(TKey key, TValue value)
+        public ImmutableHashDictionary<TKey, TValue> Add(TKey key, TValue value)
             => throw new NotImplementedException();
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.AddRange(IEnumerable{KeyValuePair{TKey, TValue}})"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> AddRange(IEnumerable<KeyValuePair<TKey, TValue>> pairs)
+        public ImmutableHashDictionary<TKey, TValue> AddRange(IEnumerable<KeyValuePair<TKey, TValue>> pairs)
             => throw new NotImplementedException();
 
         /// <summary>
@@ -110,28 +110,28 @@ namespace System.Collections.Immutable.Extra
         /// See <see cref="IImmutableDictionary{TKey, TValue}.Remove(TKey)"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> Remove(TKey key)
+        public ImmutableHashDictionary<TKey, TValue> Remove(TKey key)
             => throw new NotImplementedException();
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.RemoveRange(IEnumerable{TKey})"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> RemoveRange(IEnumerable<TKey> keys)
+        public ImmutableHashDictionary<TKey, TValue> RemoveRange(IEnumerable<TKey> keys)
             => throw new NotImplementedException();
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.SetItem(TKey, TValue)"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> SetItem(TKey key, TValue value)
+        public ImmutableHashDictionary<TKey, TValue> SetItem(TKey key, TValue value)
             => throw new NotImplementedException();
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.SetItems(IEnumerable{KeyValuePair{TKey, TValue}})"/>.
         /// </summary>
         [Pure]
-        public ImmutableDictionary<TKey, TValue> SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        public ImmutableHashDictionary<TKey, TValue> SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
             => throw new NotImplementedException();
 
         /// <summary>
@@ -144,11 +144,11 @@ namespace System.Collections.Immutable.Extra
             => throw new NotImplementedException();
 
         [Pure]
-        public ImmutableDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer)
+        public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer)
             => throw new NotImplementedException();
 
         [Pure]
-        public ImmutableDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
+        public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
             => throw new NotImplementedException();
 
         #endregion ImmutableHashDictionary
