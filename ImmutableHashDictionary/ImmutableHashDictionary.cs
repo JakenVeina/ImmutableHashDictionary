@@ -69,21 +69,58 @@ namespace System.Collections.Immutable.Extra
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> Add(TKey key, TValue value)
-            => throw new NotImplementedException();
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+
+            if(_dictionary.TryGetValue(key, out var existingValue))
+                return ValueComparer.Equals(value, existingValue)
+                    ? this
+                    : throw new ArgumentException(nameof(key), $"An element with the same key but a different value already exists. Key: {key}");
+
+            var newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+            newDictionary.Add(key, value);
+
+            return new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.AddRange(IEnumerable{KeyValuePair{TKey, TValue}})"/>.
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> AddRange(IEnumerable<KeyValuePair<TKey, TValue>> pairs)
-            => throw new NotImplementedException();
+        {
+            if (pairs is null)
+                throw new ArgumentNullException(nameof(pairs));
+
+            var newDictionary = null as Dictionary<TKey, TValue>?;
+            foreach(var pair in pairs)
+            {
+                if (_dictionary.TryGetValue(pair.Key, out var existingValue) && !ValueComparer.Equals(pair.Value, existingValue))
+                    throw new ArgumentException(nameof(pairs), $"An element with the same key but a different value already exists. Key: {pair.Key}");
+                else
+                {
+                    if (newDictionary is null)
+                        newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+                    newDictionary.Add(pair.Key, pair.Value);
+                }
+            }
+
+            return (newDictionary is null)
+                ? this
+                : new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.Clear"/>.
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> Clear()
-            => Empty;
+            => ReferenceEquals(_keyComparer, EqualityComparer<TKey>.Default) && ReferenceEquals(_valueComparer, EqualityComparer<TValue>.Default)
+                ? Empty
+                : new ImmutableHashDictionary<TKey, TValue>(_emptyDictionary, _keyComparer, _valueComparer);
 
         /// <summary>
         /// Determines whether the <see cref="ImmutableHashDictionary{TKey, TValue}"/>
@@ -111,28 +148,90 @@ namespace System.Collections.Immutable.Extra
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> Remove(TKey key)
-            => throw new NotImplementedException();
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+
+            if (!_dictionary.ContainsKey(key))
+                return this;
+
+            var newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+            newDictionary.Remove(key);
+
+            return new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.RemoveRange(IEnumerable{TKey})"/>.
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> RemoveRange(IEnumerable<TKey> keys)
-            => throw new NotImplementedException();
+        {
+            if (keys is null)
+                throw new ArgumentNullException(nameof(keys));
+
+            var newDictionary = null as Dictionary<TKey, TValue>?;
+            foreach (var key in keys)
+            {
+                if (_dictionary.ContainsKey(key))
+                {
+                    if (newDictionary is null)
+                        newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+                    newDictionary.Remove(key);
+                }
+            }
+
+            return (newDictionary is null)
+                ? this
+                : new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.SetItem(TKey, TValue)"/>.
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> SetItem(TKey key, TValue value)
-            => throw new NotImplementedException();
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+
+            if (_dictionary.TryGetValue(key, out var existingValue) && ValueComparer.Equals(value, existingValue))
+                return this;
+
+            var newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+            newDictionary[key] = value;
+
+            return new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.SetItems(IEnumerable{KeyValuePair{TKey, TValue}})"/>.
         /// </summary>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
-            => throw new NotImplementedException();
+        {
+            if (items is null)
+                throw new ArgumentNullException(nameof(items));
+
+            var newDictionary = null as Dictionary<TKey, TValue>?;
+            foreach (var item in items)
+            {
+                if (!_dictionary.TryGetValue(item.Key, out var existingValue) || !ValueComparer.Equals(item.Value, existingValue))
+                {
+                    if (newDictionary is null)
+                        newDictionary = new Dictionary<TKey, TValue>(_dictionary, _keyComparer);
+
+                    newDictionary[item.Key] = item.Value;
+                }
+            }
+
+            return (newDictionary is null)
+                ? this
+                : new ImmutableHashDictionary<TKey, TValue>(newDictionary, _keyComparer, _valueComparer);
+        }
 
         /// <summary>
         /// Creates a collection with the same contents as this collection that
@@ -141,15 +240,15 @@ namespace System.Collections.Immutable.Extra
         /// </summary>
         [Pure]
         public Builder ToBuilder()
-            => throw new NotImplementedException();
+            => new Builder(_dictionary, _keyComparer, _valueComparer);
 
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer)
-            => throw new NotImplementedException();
+            => new ImmutableHashDictionary<TKey, TValue>(_dictionary, keyComparer, _valueComparer);
 
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
-            => throw new NotImplementedException();
+            => new ImmutableHashDictionary<TKey, TValue>(_dictionary, keyComparer, valueComparer);
 
         #endregion ImmutableHashDictionary
 
