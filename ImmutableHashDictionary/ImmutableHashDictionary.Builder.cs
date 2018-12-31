@@ -12,8 +12,11 @@ namespace System.Collections.Immutable.Extra
         {
             #region Constructors
 
-            internal Builder(IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
+            internal Builder(Dictionary<TKey, TValue>? dictionary = null, IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
             {
+                _currentDictionary = ((dictionary?.Count ?? 0) == 0)
+                    ? null
+                    : new Dictionary<TKey, TValue>(dictionary);
                 _keyComparer = keyComparer ?? EqualityComparer<TKey>.Default;
                 _valueComparer = valueComparer ?? EqualityComparer<TValue>.Default;
             }
@@ -68,34 +71,19 @@ namespace System.Collections.Immutable.Extra
                 return false;
             }
 
-            /// <summary>
-            /// Adds a set of key/value entries to the dictionary
-            /// </summary>
-            /// <param name="items">The entries to be added.</param>
-            /// <exception cref="ArgumentException">Throws if <paramref name="items"/> contains a key that already exists within the dictionary, mapped to a different value.</exception>
-            public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-            {
-                if (items is null)
-                    throw new ArgumentNullException(nameof(items));
+            // TODO: Implement this if/when Dictionary<TKey, TValue> is not used under the hood, and this can be implemented as an atomic operation.
+            ///// <summary>
+            ///// Adds a set of key/value entries to the dictionary
+            ///// </summary>
+            ///// <param name="items">The entries to be added.</param>
+            //public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
 
-                var currentDictionary = CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>;
-                foreach (var item in items)
-                    currentDictionary.Add(item);
-            }
-
-            /// <summary>
-            /// Removes any entries from the dictionary whose keys match those given.
-            /// </summary>
-            /// <param name="keys">The keys whose entries are to be removed from the dictionary.</param>
-            public void RemoveRange(IEnumerable<TKey> keys)
-            {
-                if (keys is null)
-                    throw new ArgumentNullException(nameof(keys));
-
-                var currentDictionary = CurrentDictionaryForWrite;
-                foreach (var key in keys)
-                    currentDictionary.Remove(key);
-            }
+            // TODO: Implement this if/when Dictionary<TKey, TValue> is not used under the hood, and this can be implemented as an atomic operation.
+            ///// <summary>
+            ///// Removes any entries from the dictionary whose keys match those given.
+            ///// </summary>
+            ///// <param name="keys">The keys whose entries are to be removed from the dictionary.</param>
+            //public void RemoveRange(IEnumerable<TKey> keys)
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
