@@ -13,6 +13,34 @@ namespace ImmutableHashDictionary.Test
 
         #endregion Empty Tests
 
+        #region Constructor Tests
+
+        [Test]
+        public void Constructor_DictionaryIsGiven_ResultMatchesDictionary()
+            => throw new IgnoreException("Not yet implemented");
+
+        [Test]
+        public void Constructor_DictionaryIsNull_ResultIsEmpty()
+            => throw new IgnoreException("Not yet implemented");
+
+        [Test]
+        public void Constructor_KeyComparerIsGiven_KeyComparerIsGiven()
+            => throw new IgnoreException("Not yet implemented");
+
+        [Test]
+        public void Constructor_KeyComparerIsNull_KeyComparerIsDefault()
+            => throw new IgnoreException("Not yet implemented");
+
+        [Test]
+        public void Constructor_ValueComparerIsGiven_ValueComparerIsGiven()
+            => throw new IgnoreException("Not yet implemented");
+
+        [Test]
+        public void Constructor_ValueComparerIsGiven_ValueComparerIsDefault()
+            => throw new IgnoreException("Not yet implemented");
+
+        #endregion Constructor Tests
+
         #region this[] Tests
 
         [Test]
