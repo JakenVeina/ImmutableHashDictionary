@@ -294,7 +294,9 @@ namespace System.Collections.Immutable.Extra
                     return true;
                 }
 
+            #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             actualKey = default;
+            #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             return false;
         }
 
@@ -334,7 +336,6 @@ namespace System.Collections.Immutable.Extra
         #region IImmutableDictionary
         #pragma warning disable CS8616 // Nullability of reference types in return type doesn't match implemented member.
         #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
-        #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
 
         /// <inheritdoc />
         [Pure]
@@ -371,7 +372,6 @@ namespace System.Collections.Immutable.Extra
         IImmutableDictionary<TKey, TValue> IImmutableDictionary<TKey, TValue>.SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
             => SetItems(items);
 
-        #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
         #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
         #pragma warning restore CS8616 // Nullability of reference types in return type doesn't match implemented member.
         #endregion IImmutableDictionary
@@ -519,14 +519,14 @@ namespace System.Collections.Immutable.Extra
 
         #region Private Fields
 
-        internal readonly Dictionary<TKey, TValue> _dictionary;
+        private readonly Dictionary<TKey, TValue> _dictionary;
 
-        internal readonly IEqualityComparer<TKey> _keyComparer;
+        private readonly IEqualityComparer<TKey> _keyComparer;
 
-        internal readonly IEqualityComparer<TValue> _valueComparer;
+        private readonly IEqualityComparer<TValue> _valueComparer;
 
         // Singleton empty dictionary, to help avoid unnecessary memory allocations.
-        internal static readonly Dictionary<TKey, TValue> _emptyDictionary
+        private static readonly Dictionary<TKey, TValue> _emptyDictionary
             = new Dictionary<TKey, TValue>();
 
         #endregion Private Fields
