@@ -42,7 +42,14 @@ namespace System.Collections.Immutable.Extra
 
         #endregion Constructors
 
-        #region ImmutableHashDictionary
+        #region Public Members
+
+        public TValue this[TKey key]
+            => _dictionary[key];
+
+        /// <inheritdoc />
+        public int Count
+            => _dictionary.Count;
 
         /// <summary>
         /// A flag, indicating whether or not this dictionary instance contains any elements.
@@ -132,6 +139,16 @@ namespace System.Collections.Immutable.Extra
                 ? Empty
                 : new ImmutableHashDictionary<TKey, TValue>(_emptyDictionary, _keyComparer, _valueComparer);
 
+        /// <inheritdoc />
+        [Pure]
+        public bool Contains(KeyValuePair<TKey, TValue> pair)
+            => (_dictionary as ICollection<KeyValuePair<TKey, TValue>>).Contains(pair);
+
+        /// <inheritdoc />
+        [Pure]
+        public bool ContainsKey(TKey key)
+            => _dictionary.ContainsKey(key);
+
         /// <summary>
         /// Determines whether the <see cref="ImmutableHashDictionary{TKey, TValue}"/>
         /// contains an element with the specified value.
@@ -152,6 +169,11 @@ namespace System.Collections.Immutable.Extra
 
             return false;
         }
+
+        /// <inheritdoc />
+        [Pure]
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+            => _dictionary.GetEnumerator();
 
         /// <summary>
         /// See <see cref="IImmutableDictionary{TKey, TValue}.Remove(TKey)"/>.
@@ -252,6 +274,35 @@ namespace System.Collections.Immutable.Extra
         public Builder ToBuilder()
             => new Builder(_dictionary, _keyComparer, _valueComparer);
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// This is an O(N) operation, so long as the underlying dictionary implementation here is <see cref="Dictionary{TKey, TValue}"/>,
+        /// as it offers no way to lookup a key or <see cref="KeyValuePair{TKey, TValue}"/>, by hash code.
+        /// </remarks>
+        [Pure]
+        public bool TryGetKey(TKey equalKey, out TKey actualKey)
+        {
+            if (equalKey == null)
+                throw new ArgumentNullException(nameof(equalKey));
+
+            var hashCode = equalKey.GetHashCode();
+
+            foreach (var pair in _dictionary)
+                if (pair.Key!.GetHashCode() == hashCode)
+                {
+                    actualKey = pair.Key;
+                    return true;
+                }
+
+            actualKey = default;
+            return false;
+        }
+
+        /// <inheritdoc />
+        [Pure]
+        public bool TryGetValue(TKey key, out TValue value)
+            => _dictionary.TryGetValue(key, out value);
+
         /// <summary>
         /// Constructs a new <see cref="ImmutableHashDictionary{TKey, TValue}"/> with the items from this dictionary,
         /// but with the given <see cref="KeyComparer"/>.
@@ -302,11 +353,6 @@ namespace System.Collections.Immutable.Extra
 
         /// <inheritdoc />
         [Pure]
-        public bool Contains(KeyValuePair<TKey, TValue> pair)
-            => (_dictionary as ICollection<KeyValuePair<TKey, TValue>>).Contains(pair);
-
-        /// <inheritdoc />
-        [Pure]
         IImmutableDictionary<TKey, TValue> IImmutableDictionary<TKey, TValue>.Remove(TKey key)
             => Remove(key);
 
@@ -325,30 +371,6 @@ namespace System.Collections.Immutable.Extra
         IImmutableDictionary<TKey, TValue> IImmutableDictionary<TKey, TValue>.SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
             => SetItems(items);
 
-        /// <inheritdoc />
-        /// <remarks>
-        /// This is an O(N) operation, so long as the underlying dictionary implementation here is <see cref="Dictionary{TKey, TValue}"/>,
-        /// as it offers no way to lookup a key or <see cref="KeyValuePair{TKey, TValue}"/>, by hash code.
-        /// </remarks>
-        [Pure]
-        public bool TryGetKey(TKey equalKey, out TKey actualKey)
-        {
-            if (equalKey == null)
-                throw new ArgumentNullException(nameof(equalKey));
-
-            var hashCode = equalKey.GetHashCode();
-
-            foreach (var pair in _dictionary)
-                if (pair.Key!.GetHashCode() == hashCode)
-                {
-                    actualKey = pair.Key;
-                    return true;
-                }
-
-            actualKey = default;
-            return false;
-        }
-
         #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
         #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
         #pragma warning restore CS8616 // Nullability of reference types in return type doesn't match implemented member.
@@ -358,9 +380,6 @@ namespace System.Collections.Immutable.Extra
         #pragma warning disable CS8616 // Nullability of reference types in return type doesn't match implemented member.
         #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
 
-        public TValue this[TKey key]
-            => _dictionary[key];
-
         /// <inheritdoc />
         IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys
             => _dictionary.Keys;
@@ -369,34 +388,11 @@ namespace System.Collections.Immutable.Extra
         IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values
             => _dictionary.Values;
 
-        /// <inheritdoc />
-        [Pure]
-        public bool ContainsKey(TKey key)
-            => _dictionary.ContainsKey(key);
-
-        /// <inheritdoc />
-        [Pure]
-        public bool TryGetValue(TKey key, out TValue value)
-            => _dictionary.TryGetValue(key, out value);
-
         #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
         #pragma warning restore CS8616 // Nullability of reference types in return type doesn't match implemented member.
         #endregion IReadOnlyDictionary
 
-        #region IReadOnlyCollection
-
-        /// <inheritdoc />
-        public int Count
-            => _dictionary.Count;
-
-        #endregion IReadOnlyCollection
-
         #region IEnumerable
-
-        /// <inheritdoc />
-        [Pure]
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-            => _dictionary.GetEnumerator();
 
         /// <inheritdoc />
         [Pure]
@@ -495,10 +491,6 @@ namespace System.Collections.Immutable.Extra
         [Pure]
         void ICollection<KeyValuePair<TKey, TValue>>.Clear()
             => throw new NotSupportedException();
-
-        [Pure]
-        bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
-            => (_dictionary as ICollection<KeyValuePair<TKey, TValue>>).Contains(item);
 
         /// <inheritdoc />
         [Pure]
