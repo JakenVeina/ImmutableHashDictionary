@@ -3,6 +3,12 @@ using System.Diagnostics.Contracts;
 
 namespace System.Collections.Immutable.Extra
 {
+    /// <summary>
+    /// Implements <see cref="IImmutableDictionary{TKey, TValue}"/> with a focus on maintaining O(1) lookup-via-key operations,
+    /// at the cost of extra memory allocations, to maintain immutability.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys within the dictionary.</typeparam>
+    /// <typeparam name="TValue">The type of values within the dictionary.</typeparam>
     public sealed partial class ImmutableHashDictionary<TKey, TValue>
         : IImmutableDictionary<TKey, TValue>,
             IReadOnlyDictionary<TKey, TValue>,
@@ -16,6 +22,10 @@ namespace System.Collections.Immutable.Extra
     {
         #region Singleton Fields
 
+        /// <summary>
+        /// An empty <see cref="ImmutableHashDictionary{TKey, TValue}"/> object, with default equality comparison logic,
+        /// which may be used to avoid memory allocations.
+        /// </summary>
         public static readonly ImmutableHashDictionary<TKey, TValue> Empty
             = new ImmutableHashDictionary<TKey, TValue>();
 
@@ -242,10 +252,28 @@ namespace System.Collections.Immutable.Extra
         public Builder ToBuilder()
             => new Builder(_dictionary, _keyComparer, _valueComparer);
 
+        /// <summary>
+        /// Constructs a new <see cref="ImmutableHashDictionary{TKey, TValue}"/> with the items from this dictionary,
+        /// but with the given <see cref="KeyComparer"/>.
+        /// </summary>
+        /// <param name="keyComparer">The value to use for <see cref="KeyComparer"/> for the new dictionary.</param>
+        /// <returns>A new dictionary containing the same entries as this one, but built from <paramref name="keyComparer"/>.</returns>
+        /// <remarks>
+        /// Note that this requires a complete duplication of the internal hash table, as its structure depends upon <see cref="KeyComparer"/>.
+        /// </remarks>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer)
-            => new ImmutableHashDictionary<TKey, TValue>(_dictionary, keyComparer, _valueComparer);
+            => new ImmutableHashDictionary<TKey, TValue>(new Dictionary<TKey, TValue>(_dictionary, keyComparer), keyComparer, _valueComparer);
 
+        /// <summary>
+        /// Constructs a new <see cref="ImmutableHashDictionary{TKey, TValue}"/> with the items from this dictionary,
+        /// but with the given <see cref="ValueComparer"/>.
+        /// </summary>
+        /// <param name="valueComparer">The value to use for <see cref="valueComparer"/> for the new dictionary.</param>
+        /// <returns>A new dictionary containing the same entries as this one, but built from <paramref name="valueComparer"/>.</returns>
+        /// <remarks>
+        /// Note that the new dictionary will reuse this dictionary's internal hash table, as its implementation does not depend upon <see cref="ValueComparer"/>.
+        /// </remarks>
         [Pure]
         public ImmutableHashDictionary<TKey, TValue> WithComparers(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
             => new ImmutableHashDictionary<TKey, TValue>(_dictionary, keyComparer, valueComparer);

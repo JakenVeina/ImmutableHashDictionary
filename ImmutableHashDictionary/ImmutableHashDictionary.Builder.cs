@@ -1,10 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 
 namespace System.Collections.Immutable.Extra
 {
     public partial class ImmutableHashDictionary<TKey, TValue>
     {
+        /// <summary>
+        /// A traditional mutable dictionary that can be used to efficiently generate <see cref="ImmutableHashDictionary{TKey, TValue}"/> objects.
+        /// </summary>
+        [DebuggerDisplay("Count = {Count}")]
 		public sealed class Builder
             : IDictionary<TKey, TValue>,
                 IReadOnlyDictionary<TKey, TValue>,
@@ -51,14 +56,14 @@ namespace System.Collections.Immutable.Extra
                 => CurrentDictionaryForRead.Values;
 
             /// <summary>
-            /// Determines whether the <see cref="ImmutableDictionary{TKey, TValue}"/>
+            /// Determines whether the <see cref="ImmutableHashDictionary{TKey, TValue}.Builder"/>
             /// contains an element with the specified value.
             /// </summary>
             /// <param name="value">
-            /// The value to locate in the <see cref="ImmutableDictionary{TKey, TValue}"/>.
+            /// The value to locate in the <see cref="ImmutableHashDictionary{TKey, TValue}.Builder"/>.
             /// </param>
             /// <returns>
-            /// true if the <see cref="ImmutableDictionary{TKey, TValue}"/> contains
+            /// true if the <see cref="ImmutableHashDictionary{TKey, TValue}.Builder"/> contains
             /// an element with the specified value; otherwise, false.
             /// </returns>
             [Pure]
@@ -71,19 +76,57 @@ namespace System.Collections.Immutable.Extra
                 return false;
             }
 
-            // TODO: Implement this if/when Dictionary<TKey, TValue> is not used under the hood, and this can be implemented as an atomic operation.
-            ///// <summary>
-            ///// Adds a set of key/value entries to the dictionary
-            ///// </summary>
-            ///// <param name="items">The entries to be added.</param>
-            //public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+            /// <summary>
+            /// Adds a set of key/value entries to the dictionary
+            /// </summary>
+            /// <param name="items">The entries to be added.</param>
+            /// <remarks>
+            /// This method requires a re-allocation of the entire dictionary, to ensure that the operation remains atomic.
+            /// Unless an atomic operation is required (I.E. the dictionary must not mutate in the event of an exception),
+            /// you should use <see cref="Add(TKey, TValue)"/> instead.
+            /// </remarks>
+            public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+            {
+                if (items is null)
+                    throw new ArgumentNullException(nameof(items));
 
-            // TODO: Implement this if/when Dictionary<TKey, TValue> is not used under the hood, and this can be implemented as an atomic operation.
-            ///// <summary>
-            ///// Removes any entries from the dictionary whose keys match those given.
-            ///// </summary>
-            ///// <param name="keys">The keys whose entries are to be removed from the dictionary.</param>
-            //public void RemoveRange(IEnumerable<TKey> keys)
+                var newDictionary = new Dictionary<TKey, TValue>(CurrentDictionaryForRead);
+                foreach(var item in items)
+                {
+                    if (newDictionary.TryGetValue(item.Key, out var existingValue))
+                    {
+                        if (_valueComparer.Equals(existingValue, item.Value))
+                            newDictionary[item.Key] = item.Value;
+                        else
+                            throw new ArgumentException(nameof(items), $"An element with the same key but a different value already exists. Key: {item.Key}");
+                    }
+                    else
+                        newDictionary.Add(item.Key, item.Value);
+                }
+
+                _currentDictionary = newDictionary;
+            }
+
+            /// <summary>
+            /// Removes any entries from the dictionary whose keys match those given.
+            /// </summary>
+            /// <param name="keys">The keys whose entries are to be removed from the dictionary.</param>
+            /// <remarks>
+            /// This method requires a re-allocation of the entire dictionary, to ensure that the operation remains atomic.
+            /// Unless an atomic operation is required (I.E. the dictionary must not mutate in the event of an exception),
+            /// you should use <see cref="Remove(TKey)"/> instead.
+            /// </remarks>
+            public void RemoveRange(IEnumerable<TKey> keys)
+            {
+                if (keys is null)
+                    throw new ArgumentNullException(nameof(keys));
+
+                var newDictionary = new Dictionary<TKey, TValue>(CurrentDictionaryForRead);
+                foreach (var key in keys)
+                    newDictionary.Remove(key);
+
+                _currentDictionary = newDictionary;
+            }
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
