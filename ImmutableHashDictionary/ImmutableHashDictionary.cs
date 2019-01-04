@@ -26,12 +26,19 @@ namespace System.Collections.Immutable.Extra
         /// An empty <see cref="ImmutableHashDictionary{TKey, TValue}"/> object, with default equality comparison logic,
         /// which may be used to avoid memory allocations.
         /// </summary>
-        public static readonly ImmutableHashDictionary<TKey, TValue> Empty
-            = new ImmutableHashDictionary<TKey, TValue>();
+        public static readonly ImmutableHashDictionary<TKey, TValue> Empty;
 
         #endregion Singleton Fields
 
         #region Constructors
+
+        static ImmutableHashDictionary()
+        {
+            // Need to make sure _emptyDictionary gets initialized first, otherwise the constructor for Empty will NRE.
+            _emptyDictionary = new Dictionary<TKey, TValue>();
+
+            Empty = new ImmutableHashDictionary<TKey, TValue>();
+        }
 
         internal ImmutableHashDictionary(Dictionary<TKey, TValue>? dictionary = null, IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
         {
@@ -526,8 +533,7 @@ namespace System.Collections.Immutable.Extra
         private readonly IEqualityComparer<TValue> _valueComparer;
 
         // Singleton empty dictionary, to help avoid unnecessary memory allocations.
-        private static readonly Dictionary<TKey, TValue> _emptyDictionary
-            = new Dictionary<TKey, TValue>();
+        private static readonly Dictionary<TKey, TValue> _emptyDictionary;
 
         #endregion Private Fields
     }
