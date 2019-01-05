@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <NullableReferenceTypes>True</NullableReferenceTypes>
     <LangVersion>8.0</LangVersion>
+    <RootNamespace>System.Collections.Immutable.Extra.Test</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
