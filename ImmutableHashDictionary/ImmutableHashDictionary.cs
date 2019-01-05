@@ -121,8 +121,11 @@ namespace System.Collections.Immutable.Extra
             var newDictionary = null as Dictionary<TKey, TValue>?;
             foreach(var pair in pairs)
             {
-                if (_dictionary.TryGetValue(pair.Key, out var existingValue) && !ValueComparer.Equals(pair.Value, existingValue))
-                    throw new ArgumentException(nameof(pairs), $"An element with the same key but a different value already exists. Key: {pair.Key}");
+                if (_dictionary.TryGetValue(pair.Key, out var existingValue))
+                {
+                    if(!ValueComparer.Equals(pair.Value, existingValue))
+                        throw new ArgumentException(nameof(pairs), $"An element with the same key but a different value already exists. Key: {pair.Key}");
+                }
                 else
                 {
                     if (newDictionary is null)

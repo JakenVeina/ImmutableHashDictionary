@@ -222,17 +222,57 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region AddRange() Tests
 
-        [Test]
-        public void AddRange_AllKeysExistWithMatchingValue_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void AddRange_KeyValuePairsIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void AddRange_AnyKeysExistWithDifferentValue_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.AddRange(null!);
+            });
 
-        [Test]
-        public void AddRange_Otherwise_AddsNewKeysAndValuesToResult()
-            => throw new IgnoreException("Not yet implemented");
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        public void AddRange_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.AddRange(keyValuePairs).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        public void AddRange_AnyKeysExistWithDifferentValue_ThrowsException(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                uut.AddRange(keyValuePairs);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void AddRange_Otherwise_AddsNewKeysAndValuesToResult(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.AddRange(keyValuePairs).ShouldBe(
+                dictionary.Concat(keyValuePairs
+                    .Where(x => !dictionary.ContainsKey(x.Key))),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion AddRange() Tests
 
@@ -295,13 +335,21 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region ContainsValue() Tests
 
-        [Test]
-        public void ContainsValue_ValueExists_ReturnsTrue()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(ValidValueTestCaseData))]
+        public void ContainsValue_ValueExists_ReturnsTrue(Dictionary<int, int> dictionary, int value)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void ContainsValue_ValueDoesNotExist_ReturnsFalse()
-            => throw new IgnoreException("Not yet implemented");
+            uut.ContainsValue(value).ShouldBeTrue();
+        }
+
+        [TestCaseSource(nameof(InvalidValueTestCaseData))]
+        public void ContainsValue_ValueDoesNotExist_ReturnsFalse(Dictionary<int, int> dictionary, int value)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.ContainsValue(value).ShouldBeFalse();
+        }
 
         #endregion ContainsValue() Tests
 
@@ -343,13 +391,42 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region RemoveRange() Tests
 
-        [Test]
-        public void RemoveRange_AllKeysDoNotExist_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void RemoveRange_KeysIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void RemoveRange_AnyKeysExist_RemovesExistingKeysFromResult()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.RemoveRange(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeysTestCaseData))]
+        [TestCaseSource(nameof(AllKeysDoNotExistTestCaseData))]
+        public void RemoveRange_AllKeysDoNotExist_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<int> keys)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.RemoveRange(keys).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeysExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeysDoNotExistTestCaseData))]
+        public void RemoveRange_AnyKeysExist_RemovesExistingKeysFromResult(Dictionary<int, int> dictionary, IEnumerable<int> keys)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.RemoveRange(keys).ShouldBe(
+                dictionary.Where(x => !keys.Contains(x.Key)),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion RemoveRange() Tests
 
@@ -393,13 +470,46 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region SetItems() Tests
 
-        [Test]
-        public void SetItems_AllKeysExistWithMatchingValue_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void SetItems_KeyValuePairsIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void SetItems_Otherwise_ReplacesExistingValuesAndAddsNewKeysAndValuesToResult()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.SetItems(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        public void SetItems_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.SetItems(keyValuePairs).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void SetItems_Otherwise_ReplacesExistingValuesAndAddsNewKeysAndValuesToResult(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.SetItems(keyValuePairs).ShouldBe(
+                dictionary
+                    .Where(x => !keyValuePairs.Any(y => y.Key == x.Key))
+                    .Concat(keyValuePairs),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion SetItems() Tests
 
@@ -527,17 +637,57 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region IImmutableDictionary.AddRange() Tests
 
-        [Test]
-        public void IImmutableDictionary_AddRange_AllKeysExistWithMatchingValue_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_AddRange_KeyValuePairsIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void IImmutableDictionary_AddRange_AnyKeysExistWithDifferentValue_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.AddRange(null!);
+            });
 
-        [Test]
-        public void IImmutableDictionary_AddRange_Otherwise_AddsNewKeysAndValuesToResult()
-            => throw new IgnoreException("Not yet implemented");
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        public void IImmutableDictionary_AddRange_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.AddRange(keyValuePairs).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        public void IImmutableDictionary_AddRange_AnyKeysExistWithDifferentValue_ThrowsException(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                uut.AddRange(keyValuePairs);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void IImmutableDictionary_AddRange_Otherwise_AddsNewKeysAndValuesToResult(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.AddRange(keyValuePairs).ShouldBe(
+                dictionary.Concat(keyValuePairs
+                    .Where(x => !dictionary.ContainsKey(x.Key))),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion IImmutableDictionary.AddRange() Tests
 
@@ -579,13 +729,42 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region IImmutableDictionary.RemoveRange() Tests
 
-        [Test]
-        public void IImmutableDictionary_RemoveRange_AllKeysDoNotExist_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_RemoveRange_KeysIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void IImmutableDictionary_RemoveRange_AnyKeysExist_RemovesExistingKeysFromResult()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.RemoveRange(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeysTestCaseData))]
+        [TestCaseSource(nameof(AllKeysDoNotExistTestCaseData))]
+        public void IImmutableDictionary_RemoveRange_AllKeysDoNotExist_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<int> keys)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.RemoveRange(keys).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeysExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeysDoNotExistTestCaseData))]
+        public void IImmutableDictionary_RemoveRange_AnyKeysExist_RemovesExistingKeysFromResult(Dictionary<int, int> dictionary, IEnumerable<int> keys)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.RemoveRange(keys).ShouldBe(
+                dictionary.Where(x => !keys.Contains(x.Key)),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion IImmutableDictionary.RemoveRange() Tests
 
@@ -629,13 +808,46 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region IImmutableDictionary.SetItems() Tests
 
-        [Test]
-        public void IImmutableDictionary_SetItems_AllKeysExistWithMatchingValue_ReturnsSelf()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_SetItems_KeyValuePairsIsNull_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void IImmutableDictionary_SetItems_Otherwise_ReplacesExistingValuesAndAddsNewKeysAndValuesToResult()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.SetItems(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        public void IImmutableDictionary_SetItems_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.SetItems(keyValuePairs).ShouldBeSameAs(uut);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void IImmutableDictionary_SetItems_Otherwise_ReplacesExistingValuesAndAddsNewKeysAndValuesToResult(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.SetItems(keyValuePairs).ShouldBe(
+                dictionary
+                    .Where(x => !keyValuePairs.Any(y => y.Key == x.Key))
+                    .Concat(keyValuePairs),
+                ignoreOrder: true);
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         #endregion IImmutableDictionary.SetItems() Tests
 
@@ -1020,17 +1232,63 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region ICollection<KeyValuePair<TKey, TValue>>.CopyTo() Tests
 
-        [Test]
-        public void ICollection_Generic_CopyTo_ArrayIsNull_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(ValidCopyToTestCaseData))]
+        public void ICollection_Generic_CopyTo_ArrayIsNull_ThrowsException(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void ICollection_Generic_CopyTo_ArrayIndexIsInvalid_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
-             
-        [Test]
-        public void ICollection_Generic_CopyTo_Otherwise_CopiesSelfIntoArrayAtIndex()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                (uut as ICollection<KeyValuePair<int, int>>).CopyTo(null, arrayIndex);
+            });
+        }
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void ICollection_Generic_CopyTo_ArrayIndexIsNegative_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[dictionary.Count];
+
+            Should.Throw<ArgumentOutOfRangeException>(() =>
+            {
+                (uut as ICollection<KeyValuePair<int, int>>).CopyTo(array, -1);
+            });
+        }
+
+        [TestCaseSource(nameof(InvalidCopyToTestCaseData))]
+        public void ICollection_Generic_CopyTo_ArrayBoundsAreNotValid_ThrowsException(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[arraySize];
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                (uut as ICollection<KeyValuePair<int, int>>).CopyTo(array, arrayIndex);
+            });
+        }
+
+        [TestCaseSource(nameof(ValidCopyToTestCaseData))]
+        public void ICollection_Generic_CopyTo_Otherwise_CopiesSelfIntoArrayAtIndex(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[arraySize];
+
+            (uut as ICollection<KeyValuePair<int, int>>).CopyTo(array, arrayIndex);
+
+            array
+                .Skip(arrayIndex)
+                .Take(dictionary.Count)
+                .ShouldBe(uut, ignoreOrder: true);
+
+            array
+                .Take(arrayIndex)
+                .Concat(array
+                    .Skip(arrayIndex + dictionary.Count))
+                .ShouldBe(Enumerable.Repeat(default(KeyValuePair<int, int>), arraySize - dictionary.Count));
+        }
 
         #endregion ICollection<KeyValuePair<TKey, TValue>>.CopyTo() Tests
 
@@ -1079,17 +1337,63 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region ICollection.CopyTo() Tests
 
-        [Test]
-        public void ICollection_Legacy_CopyTo_ArrayIsNull_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(ValidCopyToTestCaseData))]
+        public void ICollection_Legacy_CopyTo_ArrayIsNull_ThrowsException(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-        [Test]
-        public void ICollection_Legacy_CopyTo_ArrayIndexIsInvalid_ThrowsException()
-            => throw new IgnoreException("Not yet implemented");
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                (uut as ICollection).CopyTo(null, arrayIndex);
+            });
+        }
 
-        [Test]
-        public void ICollection_Legacy_CopyTo_Otherwise_CopiesSelfIntoArrayAtIndex()
-            => throw new IgnoreException("Not yet implemented");
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void ICollection_Legacy_CopyTo_ArrayIndexIsNegative_ThrowsException(Dictionary<int, int> dictionary)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[dictionary.Count];
+
+            Should.Throw<ArgumentOutOfRangeException>(() =>
+            {
+                (uut as ICollection).CopyTo(array, -1);
+            });
+        }
+
+        [TestCaseSource(nameof(InvalidCopyToTestCaseData))]
+        public void ICollection_Legacy_CopyTo_ArrayBoundsAreNotValid_ThrowsException(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[arraySize];
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                (uut as ICollection).CopyTo(array, arrayIndex);
+            });
+        }
+
+        [TestCaseSource(nameof(ValidCopyToTestCaseData))]
+        public void ICollection_Legacy_CopyTo_Otherwise_CopiesSelfIntoArrayAtIndex(Dictionary<int, int> dictionary, int arraySize, int arrayIndex)
+        {
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            var array = new KeyValuePair<int, int>[arraySize];
+
+            (uut as ICollection).CopyTo(array, arrayIndex);
+
+            array
+                .Skip(arrayIndex)
+                .Take(dictionary.Count)
+                .ShouldBe(uut, ignoreOrder: true);
+
+            array
+                .Take(arrayIndex)
+                .Concat(array
+                    .Skip(arrayIndex + dictionary.Count))
+                .ShouldBe(Enumerable.Repeat(default(KeyValuePair<int, int>), arraySize - dictionary.Count));
+        }
 
         #endregion ICollection.CopyTo() Tests
     }
