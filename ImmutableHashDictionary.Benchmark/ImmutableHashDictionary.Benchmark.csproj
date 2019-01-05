@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>System.Collections.Immutable.Extra.Benchmark</RootNamespace>
+    <LangVersion>8.0</LangVersion>
+    <NullableReferenceTypes>True</NullableReferenceTypes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImmutableHashDictionary\ImmutableHashDictionary.csproj" />
+  </ItemGroup>
+
+</Project>
