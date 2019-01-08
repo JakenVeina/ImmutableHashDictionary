@@ -38,7 +38,7 @@ namespace System.Collections.Immutable.Extra.Benchmark
             DictionaryUut = new Dictionary<int, string>(InitialKeyValuePairs);
         }
 
-        [Benchmark(Baseline = true)]
+        [Benchmark(Baseline = true, OperationsPerInvoke = 1)]
         public void DictionaryForeachAdd()
         {
             foreach(var keyValuePair in KeyValuePairs!)
