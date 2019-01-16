@@ -11,7 +11,6 @@ namespace System.Collections.Immutable.Extra.Benchmark
         [Params(0, 1, 10, 100, 1000, 10000)]
         public int InitialSize { get; set; }
 
-        [GlobalSetup]
         public void GlobalSetup()
         {
             var random = new Random(Program.RandomSeed);
@@ -21,41 +20,55 @@ namespace System.Collections.Immutable.Extra.Benchmark
                 .OrderBy(x => random.Next())
                 .ToArray();
 
-            ImmutableDictionaryUut = Immutable.ImmutableDictionary.CreateRange(InitialKeyValuePairs);
-            ImmutableHashDictionaryUut = Extra.ImmutableHashDictionary.CreateRange(InitialKeyValuePairs);
-
             Key = InitialSize + 1;
             Value = Key.ToString();
         }
-
-        [IterationSetup]
-        public void IterationSetup()
-        {
-            DictionaryUut = new Dictionary<int, string>(InitialKeyValuePairs);
-        }
-
-        [Benchmark(Baseline = true, OperationsPerInvoke = 1)]
-        public void Dictionary()
-            => DictionaryUut!.Add(Key, Value!);
-
-        [Benchmark]
-        public ImmutableDictionary<int, string> ImmutableDictionary()
-            => ImmutableDictionaryUut!.Add(Key, Value!);
-
-        [Benchmark]
-        public ImmutableHashDictionary<int, string> ImmutableHashDictionary()
-            => ImmutableHashDictionaryUut!.Add(Key, Value!);
-
-        private Dictionary<int, string>? DictionaryUut;
-
-        private ImmutableDictionary<int, string>? ImmutableDictionaryUut;
-
-        private ImmutableHashDictionary<int, string>? ImmutableHashDictionaryUut;
 
         private KeyValuePair<int, string>[]? InitialKeyValuePairs;
 
         private int Key;
 
         private string? Value;
+
+        [GlobalSetup(Targets = new[] { nameof(DictionaryCreateRange), nameof(DictionaryWithCreateRange)})]
+        public void DictionarySetup()
+            => GlobalSetup();
+
+        [Benchmark]
+        public Dictionary<int, string> DictionaryCreateRange()
+            => new Dictionary<int, string>(InitialKeyValuePairs);
+
+        [Benchmark]
+        public void DictionaryWithCreateRange()
+            => new Dictionary<int, string>(InitialKeyValuePairs)
+                .Add(Key, Value!);
+
+        [GlobalSetup(Target = nameof(ImmutableDictionary))]
+        public void ImmutableDictionarySetup()
+        {
+            GlobalSetup();
+
+            ImmutableDictionaryUut = Immutable.ImmutableDictionary.CreateRange(InitialKeyValuePairs);
+        }
+
+        private ImmutableDictionary<int, string>? ImmutableDictionaryUut;
+
+        [Benchmark]
+        public ImmutableDictionary<int, string> ImmutableDictionary()
+            => ImmutableDictionaryUut!.Add(Key, Value!);
+
+        [GlobalSetup(Target = nameof(ImmutableHashDictionary))]
+        public void ImmutableHashDictionarySetup()
+        {
+            GlobalSetup();
+
+            ImmutableHashDictionaryUut = Extra.ImmutableHashDictionary.CreateRange(InitialKeyValuePairs!);
+        }
+
+        private ImmutableHashDictionary<int, string>? ImmutableHashDictionaryUut;
+
+        [Benchmark]
+        public ImmutableHashDictionary<int, string> ImmutableHashDictionary()
+            => ImmutableHashDictionaryUut!.Add(Key, Value!);
     }
 }

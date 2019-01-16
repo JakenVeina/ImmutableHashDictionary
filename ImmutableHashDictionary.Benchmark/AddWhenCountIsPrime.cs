@@ -6,9 +6,9 @@ using BenchmarkDotNet.Attributes;
 namespace System.Collections.Immutable.Extra.Benchmark
 {
     [MemoryDiagnoser]
-    public class Remove
+    public class AddWhenCountIsPrime
     {
-        [Params(1, 10, 100, 1000, 10000)]
+        [Params(0, 3, 11, 107, 1103, 10103)]
         public int InitialSize { get; set; }
 
         public void GlobalSetup()
@@ -20,14 +20,17 @@ namespace System.Collections.Immutable.Extra.Benchmark
                 .OrderBy(x => random.Next())
                 .ToArray();
 
-            Key = (InitialSize + 1) / 2;
+            Key = InitialSize + 1;
+            Value = Key.ToString();
         }
 
         private KeyValuePair<int, string>[]? InitialKeyValuePairs;
 
         private int Key;
 
-        [GlobalSetup(Targets = new[] { nameof(DictionaryCreateRange), nameof(DictionaryWithCreateRange) })]
+        private string? Value;
+
+        [GlobalSetup(Targets = new[] { nameof(DictionaryCreateRange), nameof(DictionaryWithCreateRange)})]
         public void DictionarySetup()
             => GlobalSetup();
 
@@ -38,7 +41,7 @@ namespace System.Collections.Immutable.Extra.Benchmark
         [Benchmark]
         public void DictionaryWithCreateRange()
             => new Dictionary<int, string>(InitialKeyValuePairs)
-                .Remove(Key);
+                .Add(Key, Value!);
 
         [GlobalSetup(Target = nameof(ImmutableDictionary))]
         public void ImmutableDictionarySetup()
@@ -52,7 +55,7 @@ namespace System.Collections.Immutable.Extra.Benchmark
 
         [Benchmark]
         public ImmutableDictionary<int, string> ImmutableDictionary()
-            => ImmutableDictionaryUut!.Remove(Key);
+            => ImmutableDictionaryUut!.Add(Key, Value!);
 
         [GlobalSetup(Target = nameof(ImmutableHashDictionary))]
         public void ImmutableHashDictionarySetup()
@@ -66,7 +69,6 @@ namespace System.Collections.Immutable.Extra.Benchmark
 
         [Benchmark]
         public ImmutableHashDictionary<int, string> ImmutableHashDictionary()
-            => ImmutableHashDictionaryUut!.Remove(Key);
-
+            => ImmutableHashDictionaryUut!.Add(Key, Value!);
     }
 }
