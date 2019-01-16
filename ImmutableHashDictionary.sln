@@ -5,13 +5,26 @@ VisualStudioVersion = 16.0.28407.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImmutableHashDictionary", "ImmutableHashDictionary\ImmutableHashDictionary.csproj", "{85701C6E-3FB2-45AD-8184-4F8403BA5069}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmutableHashDictionary.Test", "ImmutableHashDictionary.Test\ImmutableHashDictionary.Test.csproj", "{CFE1FE48-CCD3-4D9B-9D61-81A1E9C750E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImmutableHashDictionary.Test", "ImmutableHashDictionary.Test\ImmutableHashDictionary.Test.csproj", "{CFE1FE48-CCD3-4D9B-9D61-81A1E9C750E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImmutableHashDictionary.Benchmark", "ImmutableHashDictionary.Benchmark\ImmutableHashDictionary.Benchmark.csproj", "{399C2D12-BEF0-448E-961F-E53CB3446857}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImmutableHashDictionary.Benchmark", "ImmutableHashDictionary.Benchmark\ImmutableHashDictionary.Benchmark.csproj", "{399C2D12-BEF0-448E-961F-E53CB3446857}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2A53CEED-ED05-42EA-9644-C1F4839A1CD8}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{771F3206-DA41-4C3F-AC9D-B89A0F208810}"
+	ProjectSection(SolutionItems) = preProject
+		Add.md = Add.md
+		AddRange.md = AddRange.md
+		AddWhenCountIsPrime.md = AddWhenCountIsPrime.md
+		CreateRange.md = CreateRange.md
+		GetValue.md = GetValue.md
+		Remove.md = Remove.md
+		RemoveRange.md = RemoveRange.md
+		SetItemReplace.md = SetItemReplace.md
+		SetItemsReplace.md = SetItemsReplace.md
 	EndProjectSection
 EndProject
 Global
@@ -35,6 +48,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{771F3206-DA41-4C3F-AC9D-B89A0F208810} = {2A53CEED-ED05-42EA-9644-C1F4839A1CD8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA64EE09-3D40-4900-9B54-9F557F3CBA97}
