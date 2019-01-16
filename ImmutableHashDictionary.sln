@@ -16,15 +16,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{771F3206-DA41-4C3F-AC9D-B89A0F208810}"
 	ProjectSection(SolutionItems) = preProject
-		Add.md = Add.md
-		AddRange.md = AddRange.md
-		AddWhenCountIsPrime.md = AddWhenCountIsPrime.md
-		CreateRange.md = CreateRange.md
-		GetValue.md = GetValue.md
-		Remove.md = Remove.md
-		RemoveRange.md = RemoveRange.md
-		SetItemReplace.md = SetItemReplace.md
-		SetItemsReplace.md = SetItemsReplace.md
+		Benchmarks\Add.md = Benchmarks\Add.md
+		Benchmarks\AddRange.md = Benchmarks\AddRange.md
+		Benchmarks\AddWhenCountIsPrime.md = Benchmarks\AddWhenCountIsPrime.md
+		Benchmarks\CreateRange.md = Benchmarks\CreateRange.md
+		Benchmarks\GetValue.md = Benchmarks\GetValue.md
+		Benchmarks\Remove.md = Benchmarks\Remove.md
+		Benchmarks\RemoveRange.md = Benchmarks\RemoveRange.md
+		Benchmarks\SetItemReplace.md = Benchmarks\SetItemReplace.md
+		Benchmarks\SetItemsReplace.md = Benchmarks\SetItemsReplace.md
 	EndProjectSection
 EndProject
 Global
