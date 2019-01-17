@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Moq;
 using NUnit.Framework;
 
 namespace System.Collections.Immutable.Extra.Test
@@ -12,8 +13,8 @@ namespace System.Collections.Immutable.Extra.Test
             = new[]
             {
                 "",
-				"1=>2",
-				"1=>2, 2=>3",
+                "1=>2",
+                "1=>2, 2=>3",
                 "1=>2, 2=>3, 3=>4"
             };
 
@@ -399,6 +400,19 @@ namespace System.Collections.Immutable.Extra.Test
                 .Select(x =>
                     new TestCaseData(ParseDictionaryString(x.dictionaryString), x.arraySize, x.arrayIndex)
                         .SetName($"{{m}}([{x.dictionaryString}], {x.arraySize}, {x.arrayIndex})"));
+
+        public static IEqualityComparer<T> BuildFakeEqualityComparer<T>()
+        {
+            var mockEqualityComparer = new Mock<IEqualityComparer<T>>();
+            mockEqualityComparer
+                .Setup(x => x.Equals(It.IsAny<T>(), It.IsAny<T>()))
+                .Returns((T x, T y) => EqualityComparer<T>.Default.Equals(x, y));
+            mockEqualityComparer
+                .Setup(x => x.GetHashCode(It.IsAny<T>()))
+                .Returns((T x) => EqualityComparer<T>.Default.GetHashCode(x));
+
+            return mockEqualityComparer.Object;
+        }
 
         private static IEnumerable<KeyValuePair<int, int>> ParseKeyValuePairsString(string keyValuePairsString)
             => keyValuePairsString

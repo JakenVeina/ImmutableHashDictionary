@@ -14,25 +14,11 @@ namespace System.Collections.Immutable.Extra.Test
 
         public static (IEqualityComparer<int> keyComparer, IEqualityComparer<int> valueComparer, ImmutableHashDictionary<int, int> uut) BuildTestContext(Dictionary<int, int> dictionary)
         {
-            var mockKeyComparer = new Mock<IEqualityComparer<int>>();
-            mockKeyComparer
-                .Setup(x => x.Equals(It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((int x, int y) => EqualityComparer<int>.Default.Equals(x, y));
-            mockKeyComparer
-                .Setup(x => x.GetHashCode(It.IsAny<int>()))
-                .Returns((int x) => EqualityComparer<int>.Default.GetHashCode(x));
+            var keyComparer = BuildFakeEqualityComparer<int>();
+            var valueComparer = BuildFakeEqualityComparer<int>();
+            var uut = new ImmutableHashDictionary<int, int>(dictionary, keyComparer, valueComparer);
 
-            var mockValueComparer = new Mock<IEqualityComparer<int>>();
-            mockValueComparer
-                .Setup(x => x.Equals(It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((int x, int y) => EqualityComparer<int>.Default.Equals(x, y));
-            mockValueComparer
-                .Setup(x => x.GetHashCode(It.IsAny<int>()))
-                .Returns((int x) => EqualityComparer<int>.Default.GetHashCode(x));
-
-            var uut = new ImmutableHashDictionary<int, int>(dictionary, mockKeyComparer.Object, mockValueComparer.Object);
-
-            return (mockKeyComparer.Object, mockValueComparer.Object, uut);
+            return (keyComparer, valueComparer, uut);
         }
 
         #endregion Test Context
