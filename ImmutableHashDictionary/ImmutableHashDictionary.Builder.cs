@@ -28,8 +28,19 @@ namespace System.Collections.Immutable.Extra
 
             #endregion Constructors
 
-            #region Builder
+            #region Public Members
             #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
+
+            /// <inheritdoc />
+            public TValue this[TKey key]
+            {
+                get => CurrentDictionaryForRead[key];
+                set => CurrentDictionaryForWrite[key] = value;
+            }
+
+            /// <inheritdoc />
+            public int Count
+                => CurrentDictionaryForRead.Count;
 
             /// <summary>
             /// The <see cref="IEqualityComparer{T}"/> used to compare <typeparamref name="TKey"/> values within the dictionary.
@@ -55,6 +66,20 @@ namespace System.Collections.Immutable.Extra
             public IReadOnlyCollection<TValue> Values
                 => CurrentDictionaryForRead.Values;
 
+            /// <inheritdoc />
+            public void Clear()
+                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Clear();
+
+            /// <inheritdoc />
+            [Pure]
+            public bool Contains(KeyValuePair<TKey, TValue> item)
+                => (CurrentDictionaryForRead as ICollection<KeyValuePair<TKey, TValue>>).Contains(item);
+
+            /// <inheritdoc />
+            [Pure]
+            public bool ContainsKey(TKey key)
+                => CurrentDictionaryForRead.ContainsKey(key);
+
             /// <summary>
             /// Determines whether the <see cref="ImmutableHashDictionary{TKey, TValue}.Builder"/>
             /// contains an element with the specified value.
@@ -75,6 +100,10 @@ namespace System.Collections.Immutable.Extra
 
                 return false;
             }
+
+            /// <inheritdoc />
+            public void Add(TKey key, TValue value)
+                => CurrentDictionaryForWrite.Add(key, value);
 
             /// <summary>
             /// Adds a set of key/value entries to the dictionary
@@ -107,6 +136,10 @@ namespace System.Collections.Immutable.Extra
                 _currentDictionary = newDictionary;
             }
 
+            /// <inheritdoc />
+            public bool Remove(TKey key)
+                => CurrentDictionaryForWrite.Remove(key);
+
             /// <summary>
             /// Removes any entries from the dictionary whose keys match those given.
             /// </summary>
@@ -127,6 +160,11 @@ namespace System.Collections.Immutable.Extra
 
                 _currentDictionary = newDictionary;
             }
+
+            /// <inheritdoc />
+            [Pure]
+            public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+                => CurrentDictionaryForRead.GetEnumerator();
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
@@ -173,18 +211,16 @@ namespace System.Collections.Immutable.Extra
                 return immutableHashDictionary;
             }
 
+            /// <inheritdoc />
+            [Pure]
+            public bool TryGetValue(TKey key, out TValue value)
+                => CurrentDictionaryForRead.TryGetValue(key, out value);
+
             #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
-            #endregion Builder
+            #endregion Public Members
 
             #region IDictionary<TKey, TValue>
             #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
-
-            /// <inheritdoc />
-            public TValue this[TKey key]
-            {
-                get => CurrentDictionaryForRead[key];
-                set => CurrentDictionaryForWrite[key] = value;
-            }
 
             /// <inheritdoc />
             ICollection<TKey> IDictionary<TKey, TValue>.Keys
@@ -193,24 +229,6 @@ namespace System.Collections.Immutable.Extra
             /// <inheritdoc />
             ICollection<TValue> IDictionary<TKey, TValue>.Values
                 => CurrentDictionaryForRead.Values;
-
-            /// <inheritdoc />
-            public void Add(TKey key, TValue value)
-                => CurrentDictionaryForWrite.Add(key, value);
-
-            /// <inheritdoc />
-            [Pure]
-            public bool ContainsKey(TKey key)
-                => CurrentDictionaryForRead.ContainsKey(key);
-
-            /// <inheritdoc />
-            public bool Remove(TKey key)
-                => CurrentDictionaryForWrite.Remove(key);
-
-            /// <inheritdoc />
-            [Pure]
-            public bool TryGetValue(TKey key, out TValue value)
-                => CurrentDictionaryForRead.TryGetValue(key, out value);
 
             #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
             #endregion IDictionary<TKey, TValue>
@@ -267,25 +285,12 @@ namespace System.Collections.Immutable.Extra
             #region ICollection<KeyValuePair<TKey, TValue>>
 
             /// <inheritdoc />
-            public int Count
-                => CurrentDictionaryForRead.Count;
-
-            /// <inheritdoc />
             bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
                 => false;
 
             /// <inheritdoc />
-            public void Add(KeyValuePair<TKey, TValue> item)
+            void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
                 => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Add(item);
-
-            /// <inheritdoc />
-            public void Clear()
-                => (CurrentDictionaryForWrite as ICollection<KeyValuePair<TKey, TValue>>).Clear();
-
-            /// <inheritdoc />
-            [Pure]
-            public bool Contains(KeyValuePair<TKey, TValue> item)
-                => (CurrentDictionaryForRead as ICollection<KeyValuePair<TKey, TValue>>).Contains(item);
 
             /// <inheritdoc />
             [Pure]
@@ -329,15 +334,6 @@ namespace System.Collections.Immutable.Extra
 
             #endregion IReadOnlyDictionary<TKey, TValue>
 
-            #region IEnumerable<KeyValuePair<TKey, TValue>
-
-            /// <inheritdoc />
-            [Pure]
-            public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-                => CurrentDictionaryForRead.GetEnumerator();
-
-            #endregion IEnumerable<KeyValuePair<TKey, TValue>
-            
             #region IEnumerable
 
             /// <inheritdoc />

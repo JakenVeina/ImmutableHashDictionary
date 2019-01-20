@@ -6,7 +6,6 @@ using Shouldly;
 
 namespace System.Collections.Immutable.Extra.Test
 {
-    [TestFixture]
     public partial class ImmutableHashDictionaryTests
     {
         #region Create() Tests
