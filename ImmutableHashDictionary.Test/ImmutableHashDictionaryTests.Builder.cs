@@ -204,7 +204,7 @@ namespace System.Collections.Immutable.Extra.Test
 
                 Should.Throw<ArgumentNullException>(() =>
                 {
-                    uut.AddRange(null);
+                    uut.AddRange(null!);
                 });
 
                 uut.ShouldBe(dictionary, ignoreOrder: true);
