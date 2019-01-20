@@ -12,14 +12,22 @@ namespace System.Collections.Immutable.Extra.Test
     {
         #region Test Context
 
-        public static (IEqualityComparer<int> keyComparer, IEqualityComparer<int> valueComparer, ImmutableHashDictionary<int, int> uut) BuildTestContext(Dictionary<int, int> dictionary)
+        public static (IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer, ImmutableHashDictionary<TKey, TValue> uut) BuildTestContext<TKey, TValue>(Dictionary<TKey, TValue> dictionary)
         {
-            var keyComparer = BuildFakeEqualityComparer<int>();
-            var valueComparer = BuildFakeEqualityComparer<int>();
-            var uut = new ImmutableHashDictionary<int, int>(dictionary, keyComparer, valueComparer);
+            var keyComparer = BuildFakeEqualityComparer<TKey>();
+            var valueComparer = BuildFakeEqualityComparer<TValue>();
+            var uut = new ImmutableHashDictionary<TKey, TValue>(dictionary, keyComparer, valueComparer);
 
             return (keyComparer, valueComparer, uut);
         }
+
+        public static Dictionary<string, string> ToStringDictionary(Dictionary<int, int> dictionary)
+            => ToStringKeyValuePairs(dictionary)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+        public static IEnumerable<KeyValuePair<string, string>> ToStringKeyValuePairs(IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+            => keyValuePairs
+                .Select(x => new KeyValuePair<string, string>(x.Key.ToString(), x.Value.ToString()));
 
         #endregion Test Context
 
@@ -172,6 +180,21 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region Add() Tests
 
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void Add_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.Add(null, "value");
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
         [TestCaseSource(nameof(ValidKeyWithMatchingValueTestCaseData))]
         public void Add_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, int key, int value)
         {
@@ -223,6 +246,28 @@ namespace System.Collections.Immutable.Extra.Test
 
         [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
         [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void AddRange_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<KeyValuePair<int, int>> intKeyValuePairs)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keyValuePairs = ToStringKeyValuePairs(intKeyValuePairs)
+                .Append(new KeyValuePair<string, string>(null!, "value"));
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                uut.AddRange(keyValuePairs);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
         public void AddRange_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
@@ -265,7 +310,43 @@ namespace System.Collections.Immutable.Extra.Test
         #region Clear() Tests
 
         [TestCaseSource(nameof(DictionaryTestCaseData))]
-        public void Clear_Always_ResultIsEmpty(Dictionary<int, int> dictionary)
+        public void Clear_KeyComparerAndValueComparerAreDefault_ResultIsEmpty(Dictionary<int, int> dictionary)
+        {
+            var uut = new ImmutableHashDictionary<int, int>(dictionary);
+
+            uut.Clear().ShouldBeSameAs(ImmutableHashDictionary<int, int>.Empty);
+        }
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void Clear_KeyComparerIsNotDefault_ResultIsEmpty(Dictionary<int, int> dictionary)
+        {
+            var keyComparer = BuildFakeEqualityComparer<int>();
+
+            var uut = new ImmutableHashDictionary<int, int>(dictionary, keyComparer);
+
+            var result = uut.Clear();
+
+            result.ShouldBeEmpty();
+            result.KeyComparer.ShouldBeSameAs(keyComparer);
+            result.ValueComparer.ShouldBeSameAs(EqualityComparer<int>.Default);
+        }
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void Clear_ValueComparerIsNotDefault_ResultIsEmpty(Dictionary<int, int> dictionary)
+        {
+            var valueComparer = BuildFakeEqualityComparer<int>();
+
+            var uut = new ImmutableHashDictionary<int, int>(dictionary, valueComparer: valueComparer);
+
+            var result = uut.Clear();
+
+            result.ShouldBeEmpty();
+            result.KeyComparer.ShouldBeSameAs(EqualityComparer<int>.Default);
+            result.ValueComparer.ShouldBeSameAs(valueComparer);
+        }
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void Clear_KeyComparerAndValueComparerAreNotDefault_ResultIsEmpty(Dictionary<int, int> dictionary)
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
@@ -353,6 +434,21 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region Remove() Tests
 
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void Remove_KeyDoesNotExist_ReturnsSelf(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.Remove(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
         [TestCaseSource(nameof(InvalidKeyTestCaseData))]
         public void Remove_KeyDoesNotExist_ReturnsSelf(Dictionary<int, int> dictionary, int key)
         {
@@ -392,6 +488,26 @@ namespace System.Collections.Immutable.Extra.Test
 
         [TestCaseSource(nameof(EmptyKeysTestCaseData))]
         [TestCaseSource(nameof(AllKeysDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(AllKeysExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeysDoNotExistTestCaseData))]
+        public void RemoveRange_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<int> intKeys)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keys = intKeys.Select(x => x.ToString())
+                .Append(null);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                uut.RemoveRange(keys);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeysTestCaseData))]
+        [TestCaseSource(nameof(AllKeysDoNotExistTestCaseData))]
         public void RemoveRange_AllKeysDoNotExist_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<int> keys)
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
@@ -417,6 +533,21 @@ namespace System.Collections.Immutable.Extra.Test
         #endregion RemoveRange() Tests
 
         #region SetItem() Tests
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void SetItem_KeyIsNull_ThrowsException(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.SetItem(null!, "value");
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         [TestCaseSource(nameof(ValidKeyWithMatchingValueTestCaseData))]
         public void SetItem_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, int key, int value)
@@ -471,6 +602,28 @@ namespace System.Collections.Immutable.Extra.Test
 
         [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
         [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void SetItems_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<KeyValuePair<int, int>> intKeyValuePairs)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keyValuePairs = ToStringKeyValuePairs(intKeyValuePairs)
+                .Append(new KeyValuePair<string, string>(null!, "value"));
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                uut.SetItems(keyValuePairs);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
         public void SetItems_AllKeysExistWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
@@ -513,6 +666,16 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region TryGetKey() Tests
 
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void TryGetKey_KeyIsNull_ReturnsFalse(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            uut.TryGetKey(null!, out var actualKey).ShouldBeFalse();
+        }
+
         [TestCaseSource(nameof(InvalidKeyTestCaseData))]
         public void TryGetKey_MatchingKeyDoesNotExist_ReturnsFalse(Dictionary<int, int> dictionary, int key)
         {
@@ -534,6 +697,19 @@ namespace System.Collections.Immutable.Extra.Test
         #endregion TryGetKey() Tests
 
         #region TryGetValue() Tests
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void TryGetValue_KeyIsNull_ThrowsException(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                uut.TryGetValue(null!, out var value);
+            });
+        }
 
         [TestCaseSource(nameof(InvalidKeyTestCaseData))]
         public void TryGetValue_KeyDoesNotExist_ReturnsFalse(Dictionary<int, int> dictionary, int key)
@@ -587,12 +763,28 @@ namespace System.Collections.Immutable.Extra.Test
 
         #region IImmutableDictionary.Add() Tests
 
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_Add_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).Add(null!, "value");
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
         [TestCaseSource(nameof(ValidKeyWithMatchingValueTestCaseData))]
         public void IImmutableDictionary_Add_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, int key, int value)
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
             (uut as IImmutableDictionary<int, int>).Add(key, value).ShouldBeSameAs(uut);
+
             uut.ShouldBe(dictionary, ignoreOrder: true);
         }
 
@@ -630,7 +822,25 @@ namespace System.Collections.Immutable.Extra.Test
 
             Should.Throw<ArgumentNullException>(() =>
             {
-                uut.AddRange(null!);
+                (uut as IImmutableDictionary<int, int>).AddRange(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void IImmutableDictionary_AddRange_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<KeyValuePair<int, int>> intKeyValuePairs)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keyValuePairs = ToStringKeyValuePairs(intKeyValuePairs)
+                .Append(new KeyValuePair<string, string>(null!, "value"));
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).AddRange(keyValuePairs);
             });
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
@@ -642,7 +852,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.AddRange(keyValuePairs).ShouldBeSameAs(uut);
+            (uut as IImmutableDictionary<int, int>).AddRange(keyValuePairs).ShouldBeSameAs(uut);
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
         }
@@ -655,7 +865,7 @@ namespace System.Collections.Immutable.Extra.Test
 
             Should.Throw<ArgumentException>(() =>
             {
-                uut.AddRange(keyValuePairs);
+                (uut as IImmutableDictionary<int, int>).AddRange(keyValuePairs);
             });
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
@@ -667,7 +877,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.AddRange(keyValuePairs).ShouldBe(
+            (uut as IImmutableDictionary<int, int>).AddRange(keyValuePairs).ShouldBe(
                 dictionary.Concat(keyValuePairs
                     .Where(x => !dictionary.ContainsKey(x.Key))),
                 ignoreOrder: true);
@@ -690,6 +900,21 @@ namespace System.Collections.Immutable.Extra.Test
         #endregion IImmutableDictionary.Clear() Tests
 
         #region IImmutableDictionary.Remove() Tests
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_Remove_KeyDoesNotExist_ReturnsSelf(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).Remove(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         [TestCaseSource(nameof(InvalidKeyTestCaseData))]
         public void IImmutableDictionary_Remove_KeyDoesNotExist_ReturnsSelf(Dictionary<int, int> dictionary, int key)
@@ -722,7 +947,27 @@ namespace System.Collections.Immutable.Extra.Test
 
             Should.Throw<ArgumentNullException>(() =>
             {
-                uut.RemoveRange(null!);
+                (uut as IImmutableDictionary<int, int>).RemoveRange(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeysTestCaseData))]
+        [TestCaseSource(nameof(AllKeysDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(AllKeysExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeysDoNotExistTestCaseData))]
+        public void IImmutableDictionary_RemoveRange_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<int> intKeys)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keys = intKeys.Select(x => x.ToString())
+                .Append(null);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).RemoveRange(keys);
             });
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
@@ -734,7 +979,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.RemoveRange(keys).ShouldBeSameAs(uut);
+            (uut as IImmutableDictionary<int, int>).RemoveRange(keys).ShouldBeSameAs(uut);
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
         }
@@ -745,7 +990,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.RemoveRange(keys).ShouldBe(
+            (uut as IImmutableDictionary<int, int>).RemoveRange(keys).ShouldBe(
                 dictionary.Where(x => !keys.Contains(x.Key)),
                 ignoreOrder: true);
 
@@ -755,6 +1000,21 @@ namespace System.Collections.Immutable.Extra.Test
         #endregion IImmutableDictionary.RemoveRange() Tests
 
         #region IImmutableDictionary.SetItem() Tests
+
+        [TestCaseSource(nameof(DictionaryTestCaseData))]
+        public void IImmutableDictionary_SetItem_KeyIsNull_ThrowsException(Dictionary<int, int> intDictionary)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentNullException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).SetItem(null!, "value");
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
 
         [TestCaseSource(nameof(ValidKeyWithMatchingValueTestCaseData))]
         public void IImmutableDictionary_SetItem_KeyExistsWithMatchingValue_ReturnsSelf(Dictionary<int, int> dictionary, int key, int value)
@@ -801,7 +1061,29 @@ namespace System.Collections.Immutable.Extra.Test
 
             Should.Throw<ArgumentNullException>(() =>
             {
-                uut.SetItems(null!);
+                (uut as IImmutableDictionary<int, int>).SetItems(null!);
+            });
+
+            uut.ShouldBe(dictionary, ignoreOrder: true);
+        }
+
+        [TestCaseSource(nameof(EmptyKeyValuePairsTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsExistTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsInvalidTestCaseData))]
+        [TestCaseSource(nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+        [TestCaseSource(nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+        public void IImmutableDictionary_SetItems_AnyKeyIsNull_ThrowsException(Dictionary<int, int> intDictionary, IEnumerable<KeyValuePair<int, int>> intKeyValuePairs)
+        {
+            var dictionary = ToStringDictionary(intDictionary);
+            var keyValuePairs = ToStringKeyValuePairs(intKeyValuePairs)
+                .Append(new KeyValuePair<string, string>(null!, "value"));
+
+            (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+            Should.Throw<ArgumentException>(() =>
+            {
+                (uut as IImmutableDictionary<string, string>).SetItems(keyValuePairs);
             });
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
@@ -813,7 +1095,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.SetItems(keyValuePairs).ShouldBeSameAs(uut);
+            (uut as IImmutableDictionary<int, int>).SetItems(keyValuePairs).ShouldBeSameAs(uut);
 
             uut.ShouldBe(dictionary, ignoreOrder: true);
         }
@@ -826,7 +1108,7 @@ namespace System.Collections.Immutable.Extra.Test
         {
             (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
-            uut.SetItems(keyValuePairs).ShouldBe(
+            (uut as IImmutableDictionary<int, int>).SetItems(keyValuePairs).ShouldBe(
                 dictionary
                     .Where(x => !keyValuePairs.Any(y => y.Key == x.Key))
                     .Concat(keyValuePairs),

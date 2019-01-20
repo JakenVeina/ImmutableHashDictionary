@@ -121,6 +121,9 @@ namespace System.Collections.Immutable.Extra
             var newDictionary = null as Dictionary<TKey, TValue>?;
             foreach(var pair in pairs)
             {
+                if (pair.Key == null)
+                    throw new ArgumentException("Cannot contain any null keys", nameof(pairs));
+
                 if (_dictionary.TryGetValue(pair.Key, out var existingValue))
                 {
                     if(!ValueComparer.Equals(pair.Value, existingValue))
@@ -216,6 +219,9 @@ namespace System.Collections.Immutable.Extra
             var newDictionary = null as Dictionary<TKey, TValue>?;
             foreach (var key in keys)
             {
+                if (key == null)
+                    throw new ArgumentException("Cannot contain any null keys", nameof(keys));
+
                 if (_dictionary.ContainsKey(key))
                 {
                     if (newDictionary is null)
@@ -261,6 +267,9 @@ namespace System.Collections.Immutable.Extra
             var newDictionary = null as Dictionary<TKey, TValue>?;
             foreach (var item in items)
             {
+                if (item.Key == null)
+                    throw new ArgumentException("Cannot contain any null keys", nameof(items));
+
                 if (!_dictionary.TryGetValue(item.Key, out var existingValue) || !ValueComparer.Equals(item.Value, existingValue))
                 {
                     if (newDictionary is null)
@@ -292,17 +301,17 @@ namespace System.Collections.Immutable.Extra
         [Pure]
         public bool TryGetKey(TKey equalKey, out TKey actualKey)
         {
-            if (equalKey == null)
-                throw new ArgumentNullException(nameof(equalKey));
+            if (equalKey != null)
+            {
+                var hashCode = equalKey.GetHashCode();
 
-            var hashCode = equalKey.GetHashCode();
-
-            foreach (var pair in _dictionary)
-                if (pair.Key!.GetHashCode() == hashCode)
-                {
-                    actualKey = pair.Key;
-                    return true;
-                }
+                foreach (var pair in _dictionary)
+                    if (pair.Key!.GetHashCode() == hashCode)
+                    {
+                        actualKey = pair.Key;
+                        return true;
+                    }
+            }
 
             #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             actualKey = default;

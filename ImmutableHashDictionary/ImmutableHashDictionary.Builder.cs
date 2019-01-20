@@ -173,9 +173,11 @@ namespace System.Collections.Immutable.Extra
             /// <returns>The value for the key, or the default value of type <typeparamref name="TValue"/> if no matching key was found.</returns>
             [Pure]
             public TValue GetValueOrDefault(TKey key)
-                => CurrentDictionaryForRead.TryGetValue(key, out var value)
-                    ? value
-                    : default;
+                => (key == null)
+                    ? default
+                    : CurrentDictionaryForRead.TryGetValue(key, out var value)
+                        ? value
+                        : default;
 
             /// <summary>
             /// Gets the value for a given key if a matching key exists in the dictionary.
@@ -187,9 +189,11 @@ namespace System.Collections.Immutable.Extra
             /// </returns>
             [Pure]
             public TValue GetValueOrDefault(TKey key, TValue defaultValue)
-                => CurrentDictionaryForRead.TryGetValue(key, out var value)
-                    ? value
-                    : defaultValue;
+                => (key == null)
+                    ? defaultValue
+                    : CurrentDictionaryForRead.TryGetValue(key, out var value)
+                        ? value
+                        : defaultValue;
 
             /// <summary>
             /// Converts the current contents of the builder to a new <see cref="ImmutableHashDictionary{TKey, TValue}"/>.
@@ -347,7 +351,8 @@ namespace System.Collections.Immutable.Extra
 
             internal Dictionary<TKey, TValue> CurrentDictionaryForRead
                 => _currentDictionary
-                    ?? _emptyDictionary;
+                    ?? _lastDictionary
+                        ?? _emptyDictionary;
 
             internal Dictionary<TKey, TValue> CurrentDictionaryForWrite
             {

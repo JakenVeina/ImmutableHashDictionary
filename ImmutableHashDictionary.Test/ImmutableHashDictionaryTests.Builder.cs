@@ -15,11 +15,11 @@ namespace System.Collections.Immutable.Extra.Test
         {
             #region Test Context
 
-            public static (IEqualityComparer<int> keyComparer, IEqualityComparer<int> valueComparer, ImmutableHashDictionary<int, int>.Builder uut) BuildTestContext(Dictionary<int, int> dictionary)
+            public static (IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer, ImmutableHashDictionary<TKey, TValue>.Builder uut) BuildTestContext<TKey, TValue>(Dictionary<TKey, TValue> dictionary)
             {
-                var keyComparer = BuildFakeEqualityComparer<int>();
-                var valueComparer = BuildFakeEqualityComparer<int>();
-                var uut = new ImmutableHashDictionary<int, int>.Builder(new Dictionary<int, int>(dictionary), keyComparer, valueComparer);
+                var keyComparer = BuildFakeEqualityComparer<TKey>();
+                var valueComparer = BuildFakeEqualityComparer<TValue>();
+                var uut = new ImmutableHashDictionary<TKey, TValue>.Builder(new Dictionary<TKey, TValue>(dictionary), keyComparer, valueComparer);
 
                 return (keyComparer, valueComparer, uut);
             }
@@ -126,6 +126,23 @@ namespace System.Collections.Immutable.Extra.Test
                     ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void This_Set_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut[key] = value;
+
+                uut.ShouldBe(
+                    dictionary
+                        .Append(new KeyValuePair<int, int>(key, value)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion this[] = value Tests
 
             #region Count Tests
@@ -193,6 +210,23 @@ namespace System.Collections.Immutable.Extra.Test
 					ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void Add_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut.Add(key, value);
+
+                uut.ShouldBe(
+                    dictionary
+                        .Append(new KeyValuePair<int, int>(key, value)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion Add() Tests
 
             #region AddRange() Tests
@@ -249,6 +283,24 @@ namespace System.Collections.Immutable.Extra.Test
                     ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(AllKeyValuePairsDoNotExistTestCaseData))]
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(SomeKeyValuePairsDoNotExistTestCaseData))]
+            public void AddRange_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, IEnumerable<KeyValuePair<int, int>> keyValuePairs)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut.AddRange(keyValuePairs);
+
+                uut.ShouldBe(
+                    dictionary.Concat(keyValuePairs
+                        .Where(x => !dictionary.ContainsKey(x.Key))),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion AddRange() Tests
 
             #region Clear() Tests
@@ -261,6 +313,20 @@ namespace System.Collections.Immutable.Extra.Test
                 uut.Clear();
 
                 uut.ShouldBeEmpty();
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void Clear_ToImmutableHasBeenCalled_DoesNotMutateSelf(Dictionary<int, int> dictionary)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut.Clear();
+
+                uut.ShouldBeEmpty();
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion Clear() Tests
@@ -338,6 +404,72 @@ namespace System.Collections.Immutable.Extra.Test
 
             #endregion GetEnumerator() Tests
 
+            #region GetValueOrDefault(key) Tests
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void GetValueOrDefault_Key_KeyIsNull_ReturnsDefault(Dictionary<int, int> intDictionary)
+            {
+                var dictionary = ToStringDictionary(intDictionary);
+
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                uut.GetValueOrDefault(null!).ShouldBe(default);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyWithMatchingValueTestCaseData))]
+            public void GetValueOrDefault_Key_KeyExists_ReturnsValue(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                uut.GetValueOrDefault(key).ShouldBe(value);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyTestCaseData))]
+            public void GetValueOrDefault_Key_KeyDoesNotExist_ReturnsDefault(Dictionary<int, int> dictionary, int key)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                uut.GetValueOrDefault(key).ShouldBe(default);
+            }
+
+            #endregion GetValueOrDefault(key) Tests
+
+            #region GetValueOrDefault(key, defaultValue) Tests
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void GetValueOrDefault_KeyDefaultValue_KeyIsNull_ReturnsDefaultValue(Dictionary<int, int> intDictionary)
+            {
+                var dictionary = ToStringDictionary(intDictionary);
+
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var defaultValue = "defaultValue";
+
+                uut.GetValueOrDefault(null!, defaultValue).ShouldBe(defaultValue);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyWithMatchingValueTestCaseData))]
+            public void GetValueOrDefault_KeyDefaultValue_KeyExists_ReturnsValue(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var defaultValue = 123;
+
+                uut.GetValueOrDefault(key, defaultValue).ShouldBe(value);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyTestCaseData))]
+            public void GetValueOrDefault_KeyDefaultValue_KeyDoesNotExist_ReturnsDefaultValue(Dictionary<int, int> dictionary, int key)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var defaultValue = 123;
+
+                uut.GetValueOrDefault(key, defaultValue).ShouldBe(defaultValue);
+            }
+
+            #endregion GetValueOrDefault(key, defaultValue) Tests
+
             #region Remove() Tests
 
             [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyTestCaseData))]
@@ -361,6 +493,23 @@ namespace System.Collections.Immutable.Extra.Test
 					dictionary
 						.Where(x => x.Key != key),
 					ignoreOrder: true);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyTestCaseData))]
+            public void Remove_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut.Remove(key).ShouldBeTrue();
+
+                uut.ShouldBe(
+                    dictionary
+                        .Where(x => x.Key != key),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion Remove() Tests
@@ -405,7 +554,41 @@ namespace System.Collections.Immutable.Extra.Test
                     ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(AllKeysExistTestCaseData))]
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(SomeKeysDoNotExistTestCaseData))]
+            public void RemoveRange_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, IEnumerable<int> keys)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                uut.RemoveRange(keys);
+
+                uut.ShouldBe(
+                    dictionary
+                        .Where(x => !keys.Contains(x.Key)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion RemoveRange() Tests
+
+            #region ToImmutable() Tests
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void ToImmutable_Always_ResultMatchesSelf(Dictionary<int, int> dictionary)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var result = uut.ToImmutable();
+
+                result.ShouldBe(dictionary, ignoreOrder: true);
+                result.KeyComparer.ShouldBeSameAs(keyComparer);
+                result.ValueComparer.ShouldBeSameAs(valueComparer);
+            }
+
+            #endregion ToImmutable() Tests
 
             #region TryGetValue() Tests
 
@@ -548,6 +731,25 @@ namespace System.Collections.Immutable.Extra.Test
                     ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyWithDifferentValueTestCaseData))]
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void IDictionary_Legacy_This_Set_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as IDictionary)[key] = value;
+
+                uut.ShouldBe(
+                    dictionary
+						.Where(x => x.Key != key)
+                        .Append(new KeyValuePair<int, int>(key, value)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion IDictionary.this[] = value Tests
 
             #region IDictionary.IsFixedSize Tests
@@ -627,6 +829,23 @@ namespace System.Collections.Immutable.Extra.Test
 					ignoreOrder: true);
             }
 
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void IDictionary_Legacy_Add_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as IDictionary).Add(key, value);
+
+                uut.ShouldBe(
+                    dictionary
+                        .Append(new KeyValuePair<int, int>(key, value)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
             #endregion IDictionary.Add() Tests
 
             #region IDictionary.Clear() Tests
@@ -639,6 +858,20 @@ namespace System.Collections.Immutable.Extra.Test
                 (uut as IDictionary).Clear();
 
                 uut.ShouldBeEmpty();
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void IDictionary_Legacy_Clear_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as IDictionary).Clear();
+
+                uut.ShouldBeEmpty();
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion IDictionary.Clear() Tests
@@ -683,19 +916,6 @@ namespace System.Collections.Immutable.Extra.Test
 
             #region IDictionary.Remove() Tests
 
-            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyTestCaseData))]
-            public void IDictionary_Legacy_Remove_KeyExists_RemovesKey(Dictionary<int, int> dictionary, int key)
-            {
-                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
-
-                (uut as IDictionary).Remove(key);
-
-                uut.ShouldBe(
-					dictionary
-						.Where(x => x.Key != key),
-					ignoreOrder: true);
-            }
-
             [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyTestCaseData))]
             public void IDictionary_Legacy_Remove_KeyDoesNotExist_DoesNotModifySelf(Dictionary<int, int> dictionary, int key)
             {
@@ -704,6 +924,36 @@ namespace System.Collections.Immutable.Extra.Test
                 (uut as IDictionary).Remove(key);
 
                 uut.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyTestCaseData))]
+            public void IDictionary_Legacy_Remove_KeyExists_RemovesKey(Dictionary<int, int> dictionary, int key)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                (uut as IDictionary).Remove(key);
+
+                uut.ShouldBe(
+                    dictionary
+                        .Where(x => x.Key != key),
+                    ignoreOrder: true);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyTestCaseData))]
+            public void IDictionary_Legacy_Remove_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as IDictionary).Remove(key);
+
+                uut.ShouldBe(
+                    dictionary
+                        .Where(x => x.Key != key),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion IDictionary.Remove() Tests
@@ -737,7 +987,7 @@ namespace System.Collections.Immutable.Extra.Test
             }
 
             [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
-            public void ICollection_Generic_Add_ItemKeyDoesNotExist_InsertsItem(Dictionary<int, int> dictionary, int key, int value)
+            public void ICollection_Generic_Add_ItemKeyDoesNotExist_AddsItem(Dictionary<int, int> dictionary, int key, int value)
             {
                 (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
 
@@ -747,6 +997,23 @@ namespace System.Collections.Immutable.Extra.Test
                     dictionary
                         .Append(new KeyValuePair<int, int>(key, value)),
                     ignoreOrder: true);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void ICollection_Generic_Add_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as ICollection<KeyValuePair<int, int>>).Add(new KeyValuePair<int, int>(key, value));
+
+                uut.ShouldBe(
+                    dictionary
+                        .Append(new KeyValuePair<int, int>(key, value)),
+                    ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion ICollection<KeyValuePair<TKey, TValue>>.Add() Tests
@@ -761,6 +1028,20 @@ namespace System.Collections.Immutable.Extra.Test
                 (uut as ICollection<KeyValuePair<int, int>>).Clear();
 
                 uut.ShouldBeEmpty();
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(DictionaryTestCaseData))]
+            public void ICollection_Generic_Clear_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as ICollection<KeyValuePair<int, int>>).Clear();
+
+                uut.ShouldBeEmpty();
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion ICollection<KeyValuePair<TKey, TValue>>.Clear() Tests
@@ -872,6 +1153,21 @@ namespace System.Collections.Immutable.Extra.Test
                 (uut as ICollection<KeyValuePair<int, int>>).Remove(new KeyValuePair<int, int>(key, value)).ShouldBeFalse();
 
                 uut.ShouldBe(dictionary, ignoreOrder: true);
+            }
+
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(ValidKeyWithDifferentValueTestCaseData))]
+            [TestCaseSource(typeof(ImmutableHashDictionaryTests), nameof(InvalidKeyWithValueTestCaseData))]
+            public void ICollection_Generic_Remove_ToImmutableHasBeenCalled_DoesNotMutateImmutable(Dictionary<int, int> dictionary, int key, int value)
+            {
+                (var keyComparer, var valueComparer, var uut) = BuildTestContext(dictionary);
+
+                var immutableHashDictionary = uut.ToImmutable();
+
+                (uut as ICollection<KeyValuePair<int, int>>).Remove(new KeyValuePair<int, int>(key, value)).ShouldBeFalse();
+
+                uut.ShouldBe(dictionary, ignoreOrder: true);
+
+                immutableHashDictionary.ShouldBe(dictionary, ignoreOrder: true);
             }
 
             #endregion ICollection<KeyValuePair<TKey, TValue>>.Remove() Tests
