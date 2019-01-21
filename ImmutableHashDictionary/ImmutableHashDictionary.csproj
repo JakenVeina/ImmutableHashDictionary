@@ -5,6 +5,14 @@
     <LangVersion>8.0</LangVersion>
     <NullableReferenceTypes>True</NullableReferenceTypes>
     <RootNamespace>System.Collections.Immutable.Extra</RootNamespace>
+    <Authors>Jake Meiergerd</Authors>
+    <Company>N/A</Company>
+    <Description>An implementation of IImmutableDictionary&lt;TKey, TValue&gt; that maintains O(1) value lookup, at the cost of mutation performance.</Description>
+    <PackageProjectUrl>https://github.com/JakenVeina/ImmutableHashDictionary</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JakenVeina/ImmutableHashDictionary</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/JakenVeina/ImmutableHashDictionary/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+    <PackageTags>Collections;Immutable</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
